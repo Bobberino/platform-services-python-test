@@ -18,6 +18,10 @@ def main():
     db.rewards.insert({"points": 800, "rewardName": "40% off purchase", "tier": "H"})
     db.rewards.insert({"points": 900, "rewardName": "45% off purchase", "tier": "I"})
     db.rewards.insert({"points": 1000, "rewardName": "50% off purchase", "tier": "J"})
+    db.customers.remove()
+    db.customers.insert({"emailAddress": "customer01@gmail.com", "rewardPoints" : 100, "rewardsTier": "A",
+                         "tierName": "5% off purchase", "nextTier" : "B", "nextTierName": "10% off purchase",
+                         "nextTierProgress": 0.5})
     print("Rewards loaded in mongo")
 
 if __name__ == "__main__":
