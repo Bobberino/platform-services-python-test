@@ -30,7 +30,7 @@ class CustomersHandler(tornado.web.RequestHandler):
         else:
             if order_amount is None:
                 print("in Custom Handler Get - email_address sb email_address, is: ", email_address)
-                customer_dict = db.customers.find_one({"emailAddress": "customer01@gmail.com"})
+                customer_dict = db.customers.find_one({"emailAddress": email_address})
                 # Handle not found
                 print('customer_dict is: ', customer_dict)
 
