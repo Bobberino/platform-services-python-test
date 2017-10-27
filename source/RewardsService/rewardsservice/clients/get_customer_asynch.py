@@ -6,7 +6,7 @@ import tornado.options
 
 @tornado.gen.coroutine
 def json_fetch(http_client):
-    response = yield http_client.fetch("http://localhost:7050/customers/bob@bob.com", method="GET", body=None)
+    response = yield http_client.fetch("http://localhost:7050/customers/customer01@gmail.com", method="GET", body=None)
     raise gen.Return(response)
 
 @tornado.gen.coroutine

@@ -23,4 +23,4 @@ def update_customer_rewards(email_address, amount):
     http_client.close()
 
 
-update_customer_rewards('customer01@gmail.com', 101)
+update_customer_rewards('bob2@bob.com', 30)

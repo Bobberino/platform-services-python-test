@@ -67,10 +67,6 @@ class CalculateStoreCustomerRewards:
                     the next rewards tier(ex. 0.5)
     """
 
-    # Handle new Customer
-    # Handle before the first Tier
-    # Handle Max Tiers
-
     def get_current_values(self, email_address):
         client = MongoClient("mongodb", 27017)
         db = client["Rewards"]
@@ -105,11 +101,22 @@ class CalculateStoreCustomerRewards:
         for nt in next_tier:
             nt1 = nt
 
-        update_record['rewardsTier'] = ct1['tier']
-        update_record['rewardsTierName'] = ct1['rewardName']
-        update_record['nextRewardsTier'] = nt1['tier']
-        update_record['nextRewardsTierName'] = nt1['rewardName']
-        update_record['nextRewardsTierProgress'] = '0'  # figure out where current point is in between current tier and next tier
+        if not ct1:
+            update_record['rewardsTier'] = None
+            update_record['rewardsTierName'] = None
+        else:
+            update_record['rewardsTier'] = ct1['tier']
+            update_record['rewardsTierName'] = ct1['rewardName']
+
+        if not nt1:
+            update_record['nextRewardsTier'] = None
+            update_record['nextRewardsTierName'] = None
+            update_record['nextRewardsTierProgress'] = None
+        else:
+            update_record['nextRewardsTier'] = nt1['tier']
+            update_record['nextRewardsTierName'] = nt1['rewardName']
+            update_record['nextRewardsTierProgress'] = '0'
+
         print('update_record is: ', update_record)
         # write update record to the database - I think I need the _id as well.
 
@@ -123,18 +130,55 @@ class CalculateStoreCustomerRewards:
 
     def add_new_customer(self, email_address, order_amount):
 
+        print("\n\nin add_new_customer\n\n")
+
         client = MongoClient("mongodb", 27017)
         db = client["Rewards"]
 
-        rewardPoints = int(order_amount)  # floor??? truncate?
-        rewards = list(db.rewards.find({}, {"_id": 0}))  # find closest row with the value of "points" > order_amount
-        # rewardsTier = get from db.rewards doc first 2 tiers greater than order_amount - sort
-        # rewardsTierName = get from document
-        # nextRewardsTier = get from Next Document
-        # nextRewardsTierName = get from next Document
-        # nextRewardsTierProgress = calculate from next docment: ** the percentage the customer is away from reaching
-        # the next rewards tier(ex. 0.5)
-        db.customers.insert({"emailAddress": email_address, "rewardPoints": rewardPoints, "rewardsTier": "A",
-                             "tierName": "5% off purchase", "nextTier": "B", "nextTierName": "10% off purchase",
-                             "nextTierProgress": 0.5})
+        # Create new record
+        update_record = {}
+        reward_points = int(order_amount)  # floor??? truncate?
+        update_record['emailAddress'] = email_address
+        update_record['rewardPoints'] = reward_points
 
+        # Get the first record below - the tier the customer belongs to and
+        # the next record after - the next tier.
+
+        current_tier = db.rewards.find({"points": {"$lt": reward_points}}).sort([("points", pymongo.DESCENDING)]).limit(1)
+
+        ct1 = None
+        for ct in current_tier:
+            ct1 = ct
+
+        next_tier = db.rewards.find({"points": {"$gt": reward_points}}).sort([("points", pymongo.ASCENDING)]).limit(1)
+
+        nt1 = None
+        for nt in next_tier:
+            nt1 = nt
+
+        if ct1 is None:  # Hasnt earned rewards
+            update_record['rewardsTier'] = None
+            update_record['rewardsTierName'] = None
+            update_record['nextRewardsTier'] = nt1['tier']
+            update_record['nextRewardsTierName'] = nt1['rewardName']
+            update_record['nextRewardsTierProgress'] = round(1.0 - ((int(nt1['points']) - reward_points) / reward_points), 2)
+        elif nt1 is None:  # Maxed out on rewards
+            update_record['rewardsTier'] = ct1['tier']
+            update_record['rewardsTierName'] = ct1['rewardName']
+            update_record['nextRewardsTier'] = None
+            update_record['nextRewardsTierName'] = None
+            update_record['nextRewardsTierProgress'] = None
+        else:
+            diff = int(nt1['points']) - int(ct1['points'])
+            print('diff is: ', diff)
+            update_record['rewardsTier'] = ct1['tier']
+            update_record['rewardsTierName'] = ct1['rewardName']
+            update_record['nextRewardsTier'] = nt1['tier']
+            update_record['nextRewardsTierName'] = nt1['rewardName']
+            update_record['nextRewardsTierProgress'] = round(1.0 - ((int(nt1['points']) - reward_points) / diff), 2)
+
+        print('update_record is: ', update_record)
+        # write update record to the database - I think I need the _id as well.
+
+    def update_database(self):
+        pass
