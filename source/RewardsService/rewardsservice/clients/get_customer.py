@@ -24,4 +24,4 @@ def get_customer(emailAddress):
     http_client.close()
 
 
-get_customer('customer01@gmail.com')
+get_customer('customer02@gmail.com')
